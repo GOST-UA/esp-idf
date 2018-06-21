@@ -31,7 +31,7 @@ if 'BUILDDIR' in os.environ:
     builddir = os.environ['BUILDDIR']
 
 # Call Doxygen to get XML files from the header files
-print "Calling Doxygen to generate latest XML files"
+print("Calling Doxygen to generate latest XML files")
 os.system("doxygen ../Doxyfile")
 # Doxygen has generated XML files in 'xml' directory.
 # Copy them to 'xml_in', only touching the files which have changed.
@@ -44,6 +44,11 @@ os.system('python ../gen-dxd.py')
 kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
 os.system('python ../gen-kconfig-doc.py > ' + kconfig_inc_path + '.in')
 copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
+
+# Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
+esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
+os.system('python ../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in')
+copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 # 
@@ -115,7 +120,7 @@ version = run_cmd_get_output('git describe')
 # The full version, including alpha/beta/rc tags.
 # If needed, nearest tag is returned by 'git describe --abbrev=0'.
 release = version
-print 'Version: {0}  Release: {1}'.format(version, release)
+print('Version: {0}  Release: {1}'.format(version, release))
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
@@ -185,7 +190,7 @@ html_theme = 'default'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['../_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -327,3 +332,8 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
     html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no need to specify it
+
+# Override RTD CSS theme to introduce the theme corrections
+# https://github.com/rtfd/sphinx_rtd_theme/pull/432
+def setup(app):
+    app.add_stylesheet('theme_overrides.css')

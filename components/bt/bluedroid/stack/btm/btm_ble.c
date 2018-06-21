@@ -22,22 +22,22 @@
  *  security functions.
  *
  ******************************************************************************/
-#include "bt_target.h"
+#include "common/bt_target.h"
 
 #if BLE_INCLUDED == TRUE
 
 #include <string.h>
 
-#include "bt_types.h"
-#include "hcimsgs.h"
-#include "btu.h"
+#include "stack/bt_types.h"
+#include "stack/hcimsgs.h"
+#include "stack/btu.h"
 #include "btm_int.h"
-#include "btm_ble_api.h"
-#include "smp_api.h"
+#include "stack/btm_ble_api.h"
+#include "stack/smp_api.h"
 #include "l2c_int.h"
-#include "gap_api.h"
+#include "stack/gap_api.h"
 //#include "bt_utils.h"
-#include "controller.h"
+#include "device/controller.h"
 
 //#define LOG_TAG "bt_btm_ble"
 //#include "osi/include/log.h"
@@ -605,18 +605,23 @@ void BTM_ReadDevInfo (BD_ADDR remote_bda, tBT_DEVICE_TYPE *p_dev_type, tBLE_ADDR
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev (remote_bda);
     tBTM_INQ_INFO     *p_inq_info = BTM_InqDbRead(remote_bda);
+    tBLE_ADDR_TYPE    temp_addr_type = (*p_addr_type);
 
     *p_addr_type = BLE_ADDR_PUBLIC;
 
-    if (!p_dev_rec) {
+    if (!p_dev_rec) {  
         *p_dev_type = BT_DEVICE_TYPE_BREDR;
         /* Check with the BT manager if details about remote device are known */
         if (p_inq_info != NULL) {
             *p_dev_type = p_inq_info->results.device_type ;
             *p_addr_type = p_inq_info->results.ble_addr_type;
         } else {
-            /* unknown device, assume BR/EDR */
-            BTM_TRACE_DEBUG ("btm_find_dev_type - unknown device, BR/EDR assumed");
+            if(temp_addr_type <= BLE_ADDR_TYPE_MAX) {
+                *p_addr_type = temp_addr_type;
+            } else {
+                /* unknown device, assume BR/EDR */
+                BTM_TRACE_DEBUG ("btm_find_dev_type - unknown device, BR/EDR assumed");
+            }
         }
     } else { /* there is a security device record exisitng */
         /* new inquiry result, overwrite device type in security device record */
@@ -875,7 +880,7 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(BOOLEAN is_originator, BD_ADDR bd
             auth_req |= BTM_LE_AUTH_REQ_MITM;
     }
 
-    tBTM_BLE_SEC_REQ_ACT ble_sec_act;
+    tBTM_BLE_SEC_REQ_ACT ble_sec_act = BTM_BLE_SEC_REQ_ACT_NONE;
     btm_ble_link_sec_check(bdaddr, auth_req, &ble_sec_act);
 
     BTM_TRACE_DEBUG ("%s ble_sec_act %d", __func__ , ble_sec_act);
@@ -1218,7 +1223,7 @@ void btm_sec_save_le_key(BD_ADDR bd_addr, tBTM_LE_KEY_TYPE key_type, tBTM_LE_KEY
             p_rec->ble.keys.key_size = p_keys->lenc_key.key_size;
             p_rec->ble.key_type |= BTM_LE_KEY_LENC;
 
-            /* Set that link key is known since this shares field with BTM_SEC_FLAG_LKEY_KNOWN flag in btm_api.h*/
+            /* Set that link key is known since this shares field with BTM_SEC_FLAG_LKEY_KNOWN flag in stack/btm_api.h*/
             p_rec->sec_flags |=  BTM_SEC_LE_LINK_KEY_KNOWN;
             if ( p_keys->pcsrk_key.sec_level == SMP_SEC_AUTHENTICATED) {
                 p_rec->sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
@@ -1442,6 +1447,12 @@ tBTM_STATUS btm_ble_set_encryption (BD_ADDR bd_addr, void *p_ref_data, UINT8 lin
             }
         }
 
+        // already have encrypted information, do not need to update connection parameters
+        if(link_role == BTM_ROLE_SLAVE && (p_rec->ble.key_type & BTM_LE_KEY_PENC)) {
+            p_rec->ble.skip_update_conn_param = true;
+        } else {
+            p_rec->ble.skip_update_conn_param = false;    
+        }
         if (SMP_Pair(bd_addr) == SMP_STARTED) {
             cmd = BTM_CMD_STARTED;
             p_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
@@ -1937,7 +1948,14 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
             handle = HCID_GET_HANDLE (handle);
 
             btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type, match);
-
+            if(role == HCI_ROLE_SLAVE) {
+                //clear p_cb->state, controller will stop adv when ble connected.
+                tBTM_BLE_INQ_CB *p_cb = &btm_cb.ble_ctr_cb.inq_var;
+                if(p_cb) {
+                    p_cb->adv_mode = BTM_BLE_ADV_DISABLE;
+                    p_cb->state = BTM_BLE_STOP_ADV; 
+                }
+            }
             l2cble_conn_comp (handle, role, bda, bda_type, conn_interval,
                               conn_latency, conn_timeout);
 

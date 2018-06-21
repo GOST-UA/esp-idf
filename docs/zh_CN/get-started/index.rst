@@ -1,6 +1,7 @@
 ***********
 快速入门
 ***********
+:link_to_translation:`en:[English]`
 
 本文档旨在指导用户创建 ESP32 的软件环境。本文将通过一个简单的例子来说明如何使用 ESP-IDF (Espressif IoT Development Framework)，包括配置、编译、下载固件到开发板等步骤。
 
@@ -71,9 +72,9 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 .. toctree::
     :hidden:
 
-    Windows <../get-started/windows-setup>
-    Linux <../get-started/linux-setup> 
-    MacOS <../get-started/macos-setup>
+    Windows <windows-setup>
+    Linux <linux-setup> 
+    MacOS <macos-setup>
 
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
@@ -82,17 +83,17 @@ ESP32 是一套 Wi-Fi (2.4 GHz) 和蓝牙 (4.2) 双模解决方案，集成了�
 +-------------------+-------------------+-------------------+
 
 .. |windows-logo| image:: ../../_static/windows-logo.png
-    :target: ../get-started/windows-setup.html
+    :target: windows-setup.html
 
 .. |linux-logo| image:: ../../_static/linux-logo.png
-    :target: ../get-started/linux-setup.html
+    :target: linux-setup.html
 
 .. |macos-logo| image:: ../../_static/macos-logo.png
-    :target: ../get-started/macos-setup.html
+    :target: macos-setup.html
 
-.. _Windows: ../get-started/windows-setup.html
-.. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
+.. _Windows: windows-setup.html
+.. _Linux: linux-setup.html
+.. _Mac OS: macos-setup.html
 
 .. note::
 
@@ -278,7 +279,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
         e���)(Xn@�y.!��(�PW+)��Hn9a؅/9�!�t5��P�~�k��e�ea�5�jA
         ~zY��Y(1�,1�� e���)(Xn@�y.!Dr�zY(�jpi�|�+z5Ymvp
 
-    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
+    或者监视器程序启动失败，那么可能你的开发板用的是 26 MHz 晶振，而 ESP-IDF 默认的是 40 MHz 晶振。请退出监视器，回到 :ref:`配置 <get-started-configure>`，将 :envvar:`CONFIG_ESP32_XTAL_FREQ_SEL` 改为 26 MHz，然后再次 :ref:`编译和烧写 <get-started-build-flash>`。请在 ``make menuconfig`` 的 Component config --> ESP32-specific --> Main XTAL frequency 中配置。
 
 要一次性执行 ``make flash`` 和 ``make monitor``，输入 ``make flash monitor``。参考文档 :doc:`IDF Monitor <idf-monitor>` 里的快捷键和更多内容。
 
@@ -316,9 +317,9 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 .. toctree::
     :maxdepth: 1
 
-    ../get-started/add-idf_path-to-profile
-    ../get-started/establish-serial-connection
-    ../get-started/make-project
-    ../get-started/eclipse-setup
-    ../get-started/idf-monitor
-    ../get-started/toolchain-setup-scratch
+    add-idf_path-to-profile
+    establish-serial-connection
+    make-project
+    eclipse-setup
+    idf-monitor
+    toolchain-setup-scratch

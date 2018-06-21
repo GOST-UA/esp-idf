@@ -4,7 +4,7 @@
 #
 # Converts partition tables to/from CSV and binary formats.
 #
-# See http://esp-idf.readthedocs.io/en/latest/api-guides/partition-tables.html
+# See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
 # Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
@@ -31,11 +31,13 @@ import binascii
 
 MAX_PARTITION_LENGTH = 0xC00   # 3K for partition data (96 entries) leaves 1K in a 4K sector for signature
 MD5_PARTITION_BEGIN = b"\xEB\xEB" + b"\xFF" * 14 # The first 2 bytes are like magic numbers for MD5 sum
+PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 quiet = False
 md5sum = True
+offset_part_table = 0
 
 def status(msg):
     """ Print status message to stderr """
@@ -77,8 +79,11 @@ class PartitionTable(list):
                 raise
 
         # fix up missing offsets & negative sizes
-        last_end = 0x5000 # first offset after partition table
+        last_end = offset_part_table + PARTITION_TABLE_SIZE # first offset after partition table
         for e in res:
+            if offset_part_table != 0 and e.offset is not None and e.offset < last_end:
+                critical("WARNING: 0x%x address in the partition table is below 0x%x" % (e.offset, last_end))
+                e.offset = None
             if e.offset is None:
                 pad_to = 0x10000 if e.type == PartitionDefinition.APP_TYPE else 4
                 if last_end % pad_to != 0:
@@ -108,11 +113,21 @@ class PartitionTable(list):
         # check for overlaps
         last = None
         for p in sorted(self, key=lambda x:x.offset):
-            if p.offset < 0x5000:
-                raise InputError("Partition offset 0x%x is below 0x5000" % p.offset)
+            if p.offset < offset_part_table + PARTITION_TABLE_SIZE:
+                raise InputError("Partition offset 0x%x is below 0x%x" % (p.offset, offset_part_table + PARTITION_TABLE_SIZE))
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError("Partition at 0x%x overlaps 0x%x-0x%x" % (p.offset, last.offset, last.offset+last.size-1))
             last = p
+
+    def flash_size(self):
+        """ Return the size that partitions will occupy in flash
+            (ie the offset the last partition ends at)
+        """
+        try:
+            last = sorted(self, reverse=True)[0]
+        except IndexError:
+            return 0  # empty table!
+        return last.offset + last.size
 
     @classmethod
     def from_binary(cls, b):
@@ -240,6 +255,18 @@ class PartitionDefinition(object):
     def __cmp__(self, other):
         return self.offset - other.offset
 
+    def __lt__(self, other):
+        return self.offset < other.offset
+
+    def __gt__(self, other):
+        return self.offset > other.offset
+
+    def __le__(self, other):
+        return self.offset <= other.offset
+
+    def __ge__(self, other):
+        return self.offset >= other.offset
+
     def parse_type(self, strval):
         if strval == "":
             raise InputError("Field 'type' can't be left empty.")
@@ -348,12 +375,16 @@ def parse_int(v, keywords={}):
 def main():
     global quiet
     global md5sum
+    global offset_part_table
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
+    parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
+                        nargs='?', choices=[ '1MB', '2MB', '4MB', '8MB', '16MB' ])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--verify', '-v', help='Verify partition table fields', default=True, action='store_false')
     parser.add_argument('--quiet', '-q', help="Don't print status messages to stderr", action='store_true')
-
+    parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
+    
     parser.add_argument('input', help='Path to CSV or binary file to parse. Will use stdin if omitted.', type=argparse.FileType('rb'), default=sys.stdin)
     parser.add_argument('output', help='Path to output converted binary or CSV file. Will use stdout if omitted, unless the --display argument is also passed (in which case only the summary is printed.)',
                         nargs='?',
@@ -363,6 +394,7 @@ def main():
 
     quiet = args.quiet
     md5sum = not args.disable_md5sum
+    offset_part_table = int(args.offset, 0)
     input = args.input.read()
     input_is_binary = input[0:2] == PartitionDefinition.MAGIC_BYTES
     if input_is_binary:
@@ -376,6 +408,14 @@ def main():
     if args.verify:
         status("Verifying table...")
         table.verify()
+
+    if args.flash_size:
+        size_mb = int(args.flash_size.replace("MB", ""))
+        size = size_mb * 1024 * 1024  # flash memory uses honest megabytes!
+        table_size = table.flash_size()
+        if size < table_size:
+            raise InputError("Partitions defined in '%s' occupy %.1fMB of flash (%d bytes) which does not fit in configured flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
+                             (args.input.name, table_size / 1024.0 / 1024.0, table_size, size_mb))
 
     if input_is_binary:
         output = table.to_csv()

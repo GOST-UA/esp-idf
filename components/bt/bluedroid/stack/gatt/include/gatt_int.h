@@ -19,12 +19,12 @@
 #ifndef  GATT_INT_H
 #define  GATT_INT_H
 
-#include "bt_target.h"
-#include "bt_trace.h"
-#include "gatt_api.h"
-#include "btm_ble_api.h"
-#include "btu.h"
-#include "fixed_queue.h"
+#include "common/bt_target.h"
+#include "common/bt_trace.h"
+#include "stack/gatt_api.h"
+#include "stack/btm_ble_api.h"
+#include "stack/btu.h"
+#include "osi/fixed_queue.h"
 
 #include <string.h>
 
@@ -572,8 +572,8 @@ extern void gatt_free(void);
 
 /* from gatt_main.c */
 extern BOOLEAN gatt_disconnect (tGATT_TCB *p_tcb);
-extern BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBT_TRANSPORT transport);
-extern BOOLEAN gatt_connect (BD_ADDR rem_bda,  tGATT_TCB *p_tcb, tBT_TRANSPORT transport);
+extern BOOLEAN gatt_act_connect (tGATT_REG *p_reg, BD_ADDR bd_addr, tBLE_ADDR_TYPE bd_addr_type, tBT_TRANSPORT transport);
+extern BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p_tcb, tBT_TRANSPORT transport);
 extern void gatt_data_process (tGATT_TCB *p_tcb, BT_HDR *p_buf);
 extern void gatt_update_app_use_link_flag ( tGATT_IF gatt_if, tGATT_TCB *p_tcb, BOOLEAN is_add, BOOLEAN check_acl_link);
 

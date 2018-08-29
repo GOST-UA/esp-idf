@@ -234,8 +234,10 @@ ethernetif_init(struct netif *netif)
    * Initialize the snmp variables and counters inside the struct netif.
    * The last argument should be replaced with your link speed, in units
    * of bits per second.
+   
+   LINK_SPEED_OF_YOUR_NETIF_IN_BPS = 100 (ultimo parametro modificado)
    */
-  NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, LINK_SPEED_OF_YOUR_NETIF_IN_BPS);
+  NETIF_INIT_SNMP(netif, snmp_ifType_ethernet_csmacd, 100);
 
   netif->name[0] = IFNAME0;
   netif->name[1] = IFNAME1;

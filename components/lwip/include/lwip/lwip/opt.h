@@ -1817,7 +1817,7 @@
  * MIB2_STATS==1: Stats for SNMP MIB2.
  */
 #ifndef MIB2_STATS
-#define MIB2_STATS                      0
+#define MIB2_STATS                      1
 #endif
 
 #else
@@ -1839,7 +1839,7 @@
 #define IP6_FRAG_STATS                  0
 #define MLD6_STATS                      0
 #define ND6_STATS                       0
-#define MIB2_STATS                      0
+#define MIB2_STATS                      1
 
 #endif /* LWIP_STATS */
 

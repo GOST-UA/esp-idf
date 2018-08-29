@@ -47,8 +47,6 @@ extern "C" {
 #define IPADDR_TYPE_V6                6U
 #define IPADDR_TYPE_ANY               46U
 
-#define IP_IS_V4_VAL(ipaddr)   (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V4)
-
 #if LWIP_IPV4 && LWIP_IPV6
 /** A union struct for both IP version's addresses.
  * ATTENTION: watch out for its size when adding IPv6 address scope!
@@ -68,6 +66,11 @@ extern const ip_addr_t ip_addr_any_type;
 
 #define IP_IS_ANY_TYPE_VAL(ipaddr)    (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_ANY)
 #define IPADDR_ANY_TYPE_INIT          { { { { 0ul, 0ul, 0ul, 0ul } } }, IPADDR_TYPE_ANY }
+
+/* acrescento */
+#define IP_IS_V4_VAL(ipaddr)          (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V4)
+#define IP_IS_V4(ipaddr)              (((ipaddr) != NULL) && IP_IS_V4_VAL(*(ipaddr)))
+/* --- */
 
 #define IP_IS_V6_VAL(ipaddr)          (IP_GET_TYPE(&ipaddr) == IPADDR_TYPE_V6)
 #define IP_IS_V6(ipaddr)              (((ipaddr) != NULL) && IP_IS_V6_VAL(*(ipaddr)))
@@ -282,6 +285,10 @@ extern const ip_addr_t ip_addr_broadcast;
  */
 #define IP4_ADDR_ANY        (ip_2_ip4(&ip_addr_any))
 #define IP4_ADDR_BROADCAST  (ip_2_ip4(&ip_addr_broadcast))
+
+/* acrescentado */
+#define IP4_ADDR_ANY4       (ip_2_ip4(&ip_addr_any))
+/* -- */
 
 #endif /* LWIP_IPV4*/
 

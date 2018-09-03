@@ -57,6 +57,13 @@
 #define LWIP_CONST_CAST(target_type, val) ((target_type)((ptrdiff_t)val))
 #endif
 
+/** Get rid of warnings related to pointer-to-numeric and vice-versa casts,
+ * e.g. "conversion from 'u8_t' to 'void *' of greater size"
+ */
+#ifndef LWIP_PTR_NUMERIC_CAST
+#define LWIP_PTR_NUMERIC_CAST(target_type, val) LWIP_CONST_CAST(target_type, val)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

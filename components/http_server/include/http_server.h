@@ -240,6 +240,7 @@ typedef struct httpd_req {
  */
 typedef struct httpd_uri {
     const char       *uri;    /*!< The URI to handle */
+    char              use_regexp; /*!< Did the URI contain reg-expr */
     httpd_method_t    method; /*!< Method supported by the URI */
 
     /**

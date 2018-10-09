@@ -20,6 +20,8 @@
 
 #include <http_server.h>
 #include "httpd_priv.h"
+#include "slre.h"
+// #include "trex.h"
 
 static const char *TAG = "httpd_uri";
 
@@ -75,6 +77,7 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             }
 
             /* Copy remaining members */
+            hd->hd_calls[i]->use_regexp = uri_handler->use_regexp;
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
@@ -157,10 +160,41 @@ static httpd_uri_t* httpd_find_uri_handler2(httpd_err_resp_t *err,
                                             const char *uri, size_t uri_len,
                                             httpd_method_t method)
 {
+    struct slre_cap caps[3];
+
     *err = 0;
     for (int i = 0; i < hd->config.max_uri_handlers; i++) {
-        if (hd->hd_calls[i]) {
-            ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
+        if (!hd->hd_calls[i]) continue;
+
+        ESP_LOGD(TAG, LOG_FMT("[%d] = %s"), i, hd->hd_calls[i]->uri);
+
+        if (hd->hd_calls[i]->use_regexp) {
+            // TRex *rex = trex_compile(hd->hd_calls[i]->uri, NULL);
+
+            // if (!rex)
+            // {
+            //     ESP_LOGW(TAG, LOG_FMT("Failed on compiling regex for pattern '%s'"), hd->hd_calls[i]->uri);
+            //     continue;
+            // }
+
+            // int res = trex_match(rex, uri);
+            int res = slre_match(hd->hd_calls[i]->uri, uri, uri_len, caps, 3, 0);
+
+            ESP_LOGD(TAG, LOG_FMT("URI: '%s' re[%d] match res - %d"), uri, i, res);
+
+            // trex_free(rex);
+
+            if (res > 0) {
+                if (hd->hd_calls[i]->method == method)  {               // Finally match methods
+                    return hd->hd_calls[i];
+                }
+                /* URI found but method not allowed.
+                 * If URI IS found later then this
+                 * error is to be neglected */
+                *err = HTTPD_405_METHOD_NOT_ALLOWED;
+            }
+
+        } else {
             if ((strlen(hd->hd_calls[i]->uri) == uri_len) &&            // First match uri length
                 (strncmp(hd->hd_calls[i]->uri, uri, uri_len) == 0))  {  // Then match uri strings
                 if (hd->hd_calls[i]->method == method)  {               // Finally match methods

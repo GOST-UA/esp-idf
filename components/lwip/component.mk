@@ -15,6 +15,7 @@ COMPONENT_SRCDIRS := \
 	apps/ping \
 	lwip/src/api \
 	lwip/src/apps/sntp \
+	lwip/src/apps/snmp \
 	lwip/src/core \
 	lwip/src/core/ipv4 \
 	lwip/src/core/ipv6 \
